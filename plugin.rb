@@ -6,11 +6,6 @@
 gem 'omniauth-stackexchange', '0.2.0'
 
 class StackexchangeAuthenticator < ::Auth::Authenticator
-
-  CLIENT_ID = ''
-  CLIENT_SECRET = ''
-  PUBLIC_KEY = ''
-
   def name
     'stackexchange'
   end
@@ -18,14 +13,9 @@ class StackexchangeAuthenticator < ::Auth::Authenticator
   def after_authenticate(auth_token)
     result = Auth::Result.new
 
-    # grap the info we need from omni auth
-    data = auth_token[:info]
-    raw_info = auth_token["extra"]["raw_info"]
-    name = data["name"]
-    email = data["email"]
-    stex_uid = auth_token["uid"]
+    name = auth_token["display_name"]
+    stex_uid = auth_token["user_id"]
 
-    # plugin specific data storage
     current_info = ::PluginStore.get("stex", "stex_uid_#{stex_uid}")
 
     result.user =
@@ -34,27 +24,21 @@ class StackexchangeAuthenticator < ::Auth::Authenticator
       end
 
     result.name = name
-    result.email = email
-    result.extra_data = { stackexchange_uid: stackexchange_uid }
+    result.extra_data = { stex_uid: stex_uid }
 
     result
   end
 
   def after_create_account(user, auth)
-    data = auth[:extra_data]
-    ::PluginStore.set("stex", "stex_uid_#{data[:stex_uid]}", {user_id: user.id })
+    ::PluginStore.set("stex", "stex_uid_#{auth[:user_id]}", {user_id: user.id })
   end
 
   def register_middleware(omniauth)
-    omniauth.provider :stackexchange, CLIENT_ID, CLIENT_SECRET, public_key: PUBLIC_KEY, site: 'stackoverflow'
-    # omniauth.provider :stackexchange,
-    #         setup: lambda { |env|
-    #           strategy = env['omniauth.strategy']
-    #           strategy.options[:client_id] = CLIENT_ID
-    #           strategy.options[:client_secret] = CLIENT_SECRET
-    #           strategy.options[:public_key] = PUBLIC_KEY
-    #         },
-    #         scope: 'email'
+    omniauth.provider :stackexchange,
+                      SiteSetting.stackexchange_oauth2_client_id,
+                      SiteSetting.stackexchange_oauth2_client_secret,
+                      public_key: SiteSetting.stackexchange_oauth2_public_key,
+                      site: 'stackoverflow'
   end
 end
 
@@ -69,6 +53,10 @@ register_css <<CSS
 
 .btn-social.stackexchange {
   background: #46698f;
+}
+
+.btn-social.stackexchange:before {
+  content: '\\/'
 }
 
 CSS
