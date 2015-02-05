@@ -34,29 +34,28 @@ class StackexchangeAuthenticator < ::Auth::Authenticator
   end
 
   def register_middleware(omniauth)
-    omniauth.provider :stackexchange,
-                      SiteSetting.stackexchange_oauth2_client_id,
-                      SiteSetting.stackexchange_oauth2_client_secret,
-                      public_key: SiteSetting.stackexchange_oauth2_public_key,
-                      site: 'stackoverflow'
+    omniauth.provider :stackexchange, :setup => lambda { |env|
+      strategy = env['omniauth.strategy']
+      strategy.options[:client_id] = SiteSetting.stackexchange_oauth2_client_id
+      strategy.options[:client_secret] = SiteSetting.stackexchange_oauth2_client_secret
+      strategy.options[:key] = SiteSetting.stackexchange_oauth2_public_key
+      strategy.options[:site] = 'stackoverflow'
+    }
   end
 end
 
 
-auth_provider :title => 'with StackExchange',
-              :message => 'Log in via StackExchange (Make sure pop up blockers are not enabled).',
+auth_provider :title => 'with StackOverflow',
+              :message => 'Log in via StackOverflow (Make sure pop up blockers are not enabled).',
               :frame_width => 920,
               :frame_height => 800,
               :authenticator => StackexchangeAuthenticator.new
 
 register_css <<CSS
 
-.btn-social.stackexchange {
-  background: #46698f;
-}
-
 .btn-social.stackexchange:before {
-  content: '\\/'
+  font-family: 'FontAwesome';
+  content: $fa-var-stack-overflow;
 }
 
 CSS
