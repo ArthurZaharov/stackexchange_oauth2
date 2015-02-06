@@ -49,7 +49,7 @@ auth_provider :title => 'with StackOverflow',
               :message => 'Log in via StackOverflow (Make sure pop up blockers are not enabled).',
               :frame_width => 920,
               :frame_height => 800,
-              :authenticator => StackexchangeAuthenticator.new('stackexchange', trusted: true)
+              :authenticator => StackexchangeAuthenticator.new
 
 register_css <<CSS
 
