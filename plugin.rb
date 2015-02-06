@@ -3,7 +3,7 @@
 # version: 0.0.1
 # author: Arthur Zaharov
 
-gem 'omniauth-stackexchange', '0.2.0'
+require File.expand_path('../stackexchange-strategy.rb', __FILE__)
 
 class StackexchangeAuthenticator < ::Auth::Authenticator
   def name
