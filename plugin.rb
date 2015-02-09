@@ -3,7 +3,7 @@
 # version: 0.0.1
 # author: Arthur Zaharov
 
-require File.expand_path('../stackexchange-strategy.rb', __FILE__)
+gem 'omniauth-stackexchange', '0.2.0'
 
 class StackexchangeAuthenticator < ::Auth::Authenticator
   def name
@@ -13,10 +13,10 @@ class StackexchangeAuthenticator < ::Auth::Authenticator
   def after_authenticate(auth_token)
     result = Auth::Result.new
 
-    name = auth_token["display_name"]
-    stex_uid = auth_token["user_id"]
+    name = auth_token['info']['nickname']
+    stackexchange_uid = auth_token['uid']
 
-    current_info = ::PluginStore.get("stex", "stex_uid_#{stex_uid}")
+    current_info = ::PluginStore.get('stackexchange', "stackexchange_uid_#{stackexchange_uid}")
 
     result.user =
       if current_info
@@ -24,13 +24,14 @@ class StackexchangeAuthenticator < ::Auth::Authenticator
       end
 
     result.name = name
-    result.extra_data = { stex_uid: stex_uid }
+    result.extra_data = { stackexchange_uid: stackexchange_uid }
 
     result
   end
 
   def after_create_account(user, auth)
-    ::PluginStore.set("stex", "stex_uid_#{auth[:user_id]}", {user_id: user.id })
+    stackexchange_uid = auth[:extra_data][:stackexchange_uid]
+    ::PluginStore.set('stackexchange', "stackexchange_uid_#{stackexchange_uid}", { user_id: user.id })
   end
 
   def register_middleware(omniauth)
@@ -38,15 +39,15 @@ class StackexchangeAuthenticator < ::Auth::Authenticator
       strategy = env['omniauth.strategy']
       strategy.options[:client_id] = SiteSetting.stackexchange_oauth2_client_id
       strategy.options[:client_secret] = SiteSetting.stackexchange_oauth2_client_secret
-      strategy.options[:key] = SiteSetting.stackexchange_oauth2_public_key
+      strategy.options[:public_key] = SiteSetting.stackexchange_oauth2_public_key
       strategy.options[:site] = 'stackoverflow'
     }
   end
 end
 
 
-auth_provider :title => 'with StackOverflow',
-              :message => 'Log in via StackOverflow (Make sure pop up blockers are not enabled).',
+auth_provider :title => 'with StackExchange',
+              :message => 'Log in via StackExchange (Make sure pop up blockers are not enabled).',
               :frame_width => 920,
               :frame_height => 800,
               :authenticator => StackexchangeAuthenticator.new
@@ -55,7 +56,7 @@ register_css <<CSS
 
 .btn-social.stackexchange:before {
   font-family: 'FontAwesome';
-  content: $fa-var-stack-overflow;
+  content: $fa-var-stack-exchange;
 }
 
 CSS
